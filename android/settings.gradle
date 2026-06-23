@@ -1,0 +1,29 @@
+settings.gradle
+
+plugins {
+    id 'com.android.application'
+    id 'kotlin-android'
+    id 'com.google.gms.google-services'
+}
+
+include ':app'
+
+def localPropertiesFile = new File(rootDir, 'local.properties')
+def properties = new Properties()
+
+if (localPropertiesFile.exists()) {
+    properties.load(localPropertiesFile.newDataInputStream())
+}
+
+def flutterSdkPath = properties.getProperty('flutter.sdk')
+if (flutterSdkPath == null) {
+    throw new GradleException('Flutter SDK not found. Define location with flutter.sdk in the local.properties file.')
+}
+
+def flutterRoot = file(flutterSdkPath)
+if (!flutterRoot.isDirectory()) {
+    throw new GradleException("flutter.sdk $flutterSdkPath set in local.properties does not exist or is not a directory.")
+}
+
+def flutterGradlePath = flutterRoot.resolve('packages/flutter_tools/gradle')
+settingsDir.resolve('local.properties').text = "sdk.dir=${System.env.ANDROID_HOME}"
