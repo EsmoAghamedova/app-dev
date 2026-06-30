@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../constants/app_colors.dart';
+import 'package:momentum/core/constants/app_colors.dart';
 
 class CustomButton extends StatelessWidget {
   final String text;

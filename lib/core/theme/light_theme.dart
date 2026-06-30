@@ -1,112 +1,84 @@
 import 'package:flutter/material.dart';
 import '../constants/app_colors.dart';
 
-final ThemeData lightTheme = ThemeData(
+final ThemeData darkTheme = ThemeData(
   useMaterial3: true,
-  brightness: Brightness.light,
-  colorScheme: ColorScheme.light(
+  brightness: Brightness.dark,
+  scaffoldBackgroundColor: AppColors.background,
+  colorScheme: const ColorScheme.dark(
     primary: AppColors.primary,
     secondary: AppColors.secondary,
+    surface: AppColors.surface,
+    background: AppColors.background,
     error: AppColors.error,
-    surface: AppColors.white,
-    background: AppColors.grey50,
   ),
-  scaffoldBackgroundColor: AppColors.grey50,
-  appBarTheme: AppBarTheme(
-    backgroundColor: AppColors.white,
+  appBarTheme: const AppBarTheme(
+    backgroundColor: Colors.transparent,
     elevation: 0,
-    centerTitle: true,
-    titleTextStyle: const TextStyle(
-      color: AppColors.black,
-      fontSize: 18,
-      fontWeight: FontWeight.w600,
+    centerTitle: false,
+    titleTextStyle: TextStyle(
+      color: AppColors.textPrimary,
+      fontSize: 20,
+      fontWeight: FontWeight.bold,
     ),
-    iconTheme: const IconThemeData(color: AppColors.black),
+    iconTheme: IconThemeData(color: AppColors.textPrimary),
   ),
   textTheme: const TextTheme(
-    displayLarge: TextStyle(
-      fontSize: 32,
-      fontWeight: FontWeight.bold,
-      color: AppColors.black,
-    ),
-    displayMedium: TextStyle(
-      fontSize: 28,
-      fontWeight: FontWeight.bold,
-      color: AppColors.black,
-    ),
-    titleLarge: TextStyle(
-      fontSize: 20,
-      fontWeight: FontWeight.w600,
-      color: AppColors.black,
-    ),
-    titleMedium: TextStyle(
-      fontSize: 16,
-      fontWeight: FontWeight.w600,
-      color: AppColors.black,
-    ),
-    bodyLarge: TextStyle(
-      fontSize: 16,
-      fontWeight: FontWeight.w500,
-      color: AppColors.grey800,
-    ),
-    bodyMedium: TextStyle(
-      fontSize: 14,
-      fontWeight: FontWeight.w500,
-      color: AppColors.grey700,
-    ),
-    labelSmall: TextStyle(
-      fontSize: 12,
-      fontWeight: FontWeight.w400,
-      color: AppColors.grey600,
-    ),
+    displayLarge: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold),
+    displayMedium: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold),
+    displaySmall: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold),
+    titleLarge: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w600),
+    bodyLarge: TextStyle(color: AppColors.textPrimary),
+    bodyMedium: TextStyle(color: AppColors.textSecondary),
   ),
   inputDecorationTheme: InputDecorationTheme(
     filled: true,
-    fillColor: AppColors.grey100,
-    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+    fillColor: AppColors.surface,
+    contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
     border: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(12),
-      borderSide: const BorderSide(color: AppColors.grey200),
+      borderRadius: BorderRadius.circular(16),
+      borderSide: BorderSide.none,
     ),
     enabledBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(12),
-      borderSide: const BorderSide(color: AppColors.grey200),
+      borderRadius: BorderRadius.circular(16),
+      borderSide: BorderSide.none,
     ),
     focusedBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(16),
       borderSide: const BorderSide(color: AppColors.primary, width: 2),
     ),
-    errorBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(12),
-      borderSide: const BorderSide(color: AppColors.error),
-    ),
-    focusedErrorBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(12),
-      borderSide: const BorderSide(color: AppColors.error, width: 2),
-    ),
-    labelStyle: const TextStyle(color: AppColors.grey600),
-    hintStyle: const TextStyle(color: AppColors.grey500),
+    labelStyle: const TextStyle(color: AppColors.textSecondary),
+    hintStyle: const TextStyle(color: AppColors.textSecondary),
   ),
   elevatedButtonTheme: ElevatedButtonThemeData(
     style: ElevatedButton.styleFrom(
       backgroundColor: AppColors.primary,
-      foregroundColor: AppColors.white,
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      elevation: 2,
+      foregroundColor: Colors.white,
+      minimumSize: const Size(double.infinity, 56),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      elevation: 0,
+      textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
     ),
   ),
-  outlinedButtonTheme: OutlinedButtonThemeData(
-    style: OutlinedButton.styleFrom(
-      foregroundColor: AppColors.primary,
-      side: const BorderSide(color: AppColors.primary),
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-    ),
+  cardTheme: CardThemeData(
+    color: AppColors.surface,
+    elevation: 0,
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
   ),
-  cardTheme: CardTheme(
-    color: AppColors.white,
-    elevation: 1,
-    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+  navigationBarTheme: NavigationBarThemeData(
+    backgroundColor: AppColors.surface,
+    indicatorColor: AppColors.primary.withValues(alpha: 0.2),
+    iconTheme: MaterialStateProperty.resolveWith((states) {
+      if (states.contains(MaterialState.selected)) {
+        return const IconThemeData(color: AppColors.primary);
+      }
+      return const IconThemeData(color: AppColors.textSecondary);
+    }),
+    labelTextStyle: MaterialStateProperty.resolveWith((states) {
+      if (states.contains(MaterialState.selected)) {
+        return const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold);
+      }
+      return const TextStyle(color: AppColors.textSecondary);
+    }),
   ),
 );

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../constants/app_colors.dart';
-import '../../models/task_model.dart';
+import 'package:momentum/core/constants/app_colors.dart';
+import 'package:momentum/models/task_model.dart';
 
 class TaskCard extends StatelessWidget {
   final TaskModel task;

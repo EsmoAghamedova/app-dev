@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import '../services/task_service.dart';
+import '../../../models/task_model.dart';
+import '../../../core/constants/app_colors.dart';
 
 class EditTaskScreen extends StatefulWidget {
   final String taskId;
@@ -13,152 +17,101 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
+  final _taskService = TaskService();
   DateTime? _selectedDeadline;
-  String _selectedStatus = 'Planned';
-  String _selectedPriority = 'Medium';
+  String? _selectedStatus;
+  String? _selectedPriority;
+  bool _isLoading = false;
+  TaskModel? _originalTask;
 
   @override
-  void dispose() {
-    _titleController.dispose();
-    _descriptionController.dispose();
-    super.dispose();
+  void initState() {
+    super.initState();
+    _loadTask();
+  }
+
+  Future<void> _loadTask() async {
+    final task = await _taskService.getTask(widget.taskId);
+    if (task != null) {
+      setState(() {
+        _originalTask = task;
+        _titleController.text = task.title;
+        _descriptionController.text = task.description;
+        _selectedDeadline = task.deadline;
+        _selectedStatus = task.status.displayName;
+        _selectedPriority = task.priority.displayName;
+      });
+    }
+  }
+
+  Future<void> _handleUpdate() async {
+    if (_formKey.currentState!.validate() && _originalTask != null) {
+      setState(() => _isLoading = true);
+      try {
+        final updatedTask = _originalTask!.copyWith(
+          title: _titleController.text.trim(),
+          description: _descriptionController.text.trim(),
+          deadline: _selectedDeadline,
+          status: TaskStatus.fromString(_selectedStatus ?? 'Planned'),
+          priority: TaskPriority.fromString(_selectedPriority ?? 'Medium'),
+          updatedAt: DateTime.now(),
+        );
+        await _taskService.updateTask(taskId: widget.taskId, task: updatedTask);
+        if (mounted) context.pop();
+      } catch (e) {
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+      } finally {
+        if (mounted) setState(() => _isLoading = false);
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Edit Task')),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text('Task Title'),
-                const SizedBox(height: 8),
-                TextFormField(
-                  controller: _titleController,
-                  decoration: InputDecoration(
-                    hintText: 'Enter task title',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  validator: (value) {
-                    if (value?.isEmpty ?? true) {
-                      return 'Please enter task title';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 24),
-                const Text('Description'),
-                const SizedBox(height: 8),
-                TextFormField(
-                  controller: _descriptionController,
-                  maxLines: 4,
-                  decoration: InputDecoration(
-                    hintText: 'Enter task description',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 24),
-                const Text('Deadline'),
-                const SizedBox(height: 8),
-                GestureDetector(
-                  onTap: () async {
-                    final date = await showDatePicker(
-                      context: context,
-                      initialDate: _selectedDeadline ?? DateTime.now(),
-                      firstDate: DateTime.now(),
-                      lastDate: DateTime.now().add(const Duration(days: 365)),
-                    );
-                    if (date != null) {
-                      setState(() => _selectedDeadline = date);
-                    }
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      border: Border.all(color: Colors.grey),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      _selectedDeadline?.toString().split(' ')[0] ??
-                          'Select Deadline',
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 24),
-                const Text('Status'),
-                const SizedBox(height: 8),
-                DropdownButtonFormField(
-                  value: _selectedStatus,
-                  items: ['Planned', 'In Progress', 'Completed']
-                      .map((e) => DropdownMenuItem(value: e, child: Text(e)))
-                      .toList(),
-                  onChanged: (value) {
-                    setState(() => _selectedStatus = value ?? 'Planned');
-                  },
-                ),
-                const SizedBox(height: 24),
-                const Text('Priority'),
-                const SizedBox(height: 8),
-                DropdownButtonFormField(
-                  value: _selectedPriority,
-                  items: ['Low', 'Medium', 'High']
-                      .map((e) => DropdownMenuItem(value: e, child: Text(e)))
-                      .toList(),
-                  onChanged: (value) {
-                    setState(() => _selectedPriority = value ?? 'Medium');
-                  },
-                ),
-                const SizedBox(height: 32),
-                Row(
+      body: _originalTask == null || _selectedStatus == null || _selectedPriority == null
+          ? const Center(child: CircularProgressIndicator())
+          : SingleChildScrollView(
+              padding: const EdgeInsets.all(24),
+              child: Form(
+                key: _formKey,
+                child: Column(
                   children: [
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: () {
-                          Navigator.pop(context);
-                        },
-                        style: ElevatedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        child: const Text('Cancel'),
-                      ),
+                    TextFormField(
+                      controller: _titleController,
+                      decoration: const InputDecoration(labelText: 'Task Name'),
+                      validator: (v) => v!.isEmpty ? 'Enter a name' : null,
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: () {
-                          if (_formKey.currentState!.validate()) {
-                            // TODO: Implement update logic
-                            Navigator.pop(context);
-                          }
-                        },
-                        style: ElevatedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        child: const Text('Update'),
-                      ),
+                    const SizedBox(height: 20),
+                    TextFormField(
+                      controller: _descriptionController,
+                      decoration: const InputDecoration(labelText: 'Description'),
+                      maxLines: 3,
+                    ),
+                    const SizedBox(height: 20),
+                    DropdownButtonFormField<String>(
+                      value: _selectedStatus,
+                      decoration: const InputDecoration(labelText: 'Status'),
+                      items: ['Planned', 'In Progress', 'Completed'].map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
+                      onChanged: (v) => setState(() => _selectedStatus = v),
+                    ),
+                    const SizedBox(height: 20),
+                    DropdownButtonFormField<String>(
+                      value: _selectedPriority,
+                      decoration: const InputDecoration(labelText: 'Priority'),
+                      items: ['Low', 'Medium', 'High'].map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
+                      onChanged: (v) => setState(() => _selectedPriority = v),
+                    ),
+                    const SizedBox(height: 32),
+                    ElevatedButton(
+                      onPressed: _isLoading ? null : _handleUpdate,
+                      child: _isLoading ? const CircularProgressIndicator(color: Colors.white) : const Text('Update Task'),
                     ),
                   ],
                 ),
-              ],
+              ),
             ),
-          ),
-        ),
-      ),
     );
   }
 }

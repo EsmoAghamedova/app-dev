@@ -1,12 +1,20 @@
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import '../../models/user_model.dart';
-import '../services/firebase_service.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:momentum/models/user_model.dart';
+import 'package:momentum/core/services/firebase_service.dart';
+import 'package:momentum/firebase_options.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 class AuthService {
   final FirebaseService _firebaseService = FirebaseService();
+  late final GoogleSignIn _googleSignIn;
 
-  // Register
+  AuthService() {
+    _googleSignIn = GoogleSignIn(
+      clientId: kIsWeb ? DefaultFirebaseOptions.web.apiKey : null,
+    );
+  }
+
   Future<UserModel?> register({
     required String email,
     required String password,
@@ -17,6 +25,7 @@ class AuthService {
           .createUserWithEmailAndPassword(email: email, password: password);
 
       final User user = userCredential.user!;
+      await user.updateDisplayName(username);
 
       final userModel = UserModel(
         id: user.uid,
@@ -38,7 +47,6 @@ class AuthService {
     }
   }
 
-  // Login
   Future<UserModel?> login({
     required String email,
     required String password,
@@ -65,16 +73,71 @@ class AuthService {
     }
   }
 
-  // Logout
+  Future<UserModel?> signInWithGoogle() async {
+    try {
+      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+      if (googleUser == null) return null;
+
+      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+      final OAuthCredential credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
+      );
+
+      final UserCredential userCredential =
+          await _firebaseService.auth.signInWithCredential(credential);
+      final User user = userCredential.user!;
+
+      final doc = await _firebaseService.firestore
+          .collection('users')
+          .doc(user.uid)
+          .get();
+
+      if (!doc.exists) {
+        final userModel = UserModel(
+          id: user.uid,
+          username: user.displayName ?? 'User',
+          email: user.email ?? '',
+          photoUrl: user.photoURL,
+          createdAt: DateTime.now(),
+        );
+
+        await _firebaseService.firestore
+            .collection('users')
+            .doc(user.uid)
+            .set(userModel.toMap());
+
+        return userModel;
+      }
+
+      return UserModel.fromMap(doc.data() as Map<String, dynamic>);
+    } catch (e) {
+      throw 'Google Sign-In failed: $e';
+    }
+  }
+
+  Future<void> updateUser(UserModel user) async {
+    try {
+      await _firebaseService.firestore
+          .collection('users')
+          .doc(user.id)
+          .update(user.toMap());
+    } catch (e) {
+      throw 'Failed to update user: $e';
+    }
+  }
+
   Future<void> logout() async {
     try {
-      await _firebaseService.auth.signOut();
+      await Future.wait([
+        _firebaseService.auth.signOut(),
+        _googleSignIn.signOut(),
+      ]);
     } catch (e) {
       throw 'Logout failed: $e';
     }
   }
 
-  // Get current user
   UserModel? getCurrentUser() {
     final user = _firebaseService.currentUser;
     if (user != null) {
@@ -89,7 +152,16 @@ class AuthService {
     return null;
   }
 
-  // Get user stream
+  Future<void> sendPasswordResetEmail(String email) async {
+    try {
+      await _firebaseService.auth.sendPasswordResetEmail(email: email);
+    } on FirebaseAuthException catch (e) {
+      throw _handleAuthException(e);
+    } catch (e) {
+      throw 'Failed to send reset email: $e';
+    }
+  }
+
   Stream<User?> get userStream => _firebaseService.userStream;
 
   String _handleAuthException(FirebaseAuthException e) {
